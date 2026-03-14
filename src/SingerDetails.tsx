@@ -21,6 +21,7 @@ import {
 } from './Common.styles';
 import playerCore from './playerCore';
 import logUtil from './utils/LogUtil';
+import type { Song } from './types/song.type';
 
 const SingerDetails = ({ route, navigation }) => {
   const [selectedOption, setSelectedOption] = useState('歌曲'); // 当前选项，默认为"歌曲"

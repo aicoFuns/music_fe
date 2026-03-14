@@ -24,11 +24,12 @@ import {
 import { EmptyList, Footer } from './FlatListComponent';
 import logUtil from './utils/LogUtil';
 
-const SearchList = ({ route, navigation }) => {
-  type SearchType = 'music' | 'singer' | 'playList' | 'sound-album';
-  const [activeOption, setActiveOption] = useState<SearchType>('music'); // 当前选中的过滤选项
-  const [results, setResults] = useState([]); // 搜索结果
-  const [keyWord, setKeyWord] = useState(route.params.keyWord);
+type SearchType = 'music' | 'singer' | 'playList' | 'sound-album';
+
+const SearchList = ({ route, navigation }: { route: any; navigation: any }) => {
+  const [activeOption, setActiveOption] = useState<SearchType>('music');
+  const [results, setResults] = useState<any[]>([]);
+  const [keyWord, setKeyWord] = useState(route?.params?.keyWord ?? '');
   const inputRef = useRef(null);
   const pageNum = useRef(1);
 
@@ -212,7 +213,7 @@ const SearchList = ({ route, navigation }) => {
       {/* 搜索区域 */}
       <View style={styles.searchArea}>
         <TextInput
-          style={[styles.searchInput, { height: searchButtonHeight }]}
+          style={[styles.searchInput, { height: Number(searchButtonHeight) || 40 }]}
           ref={inputRef}
           placeholder="搜索你喜欢的音乐或声音~"
           value={keyWord}
@@ -244,7 +245,7 @@ const SearchList = ({ route, navigation }) => {
             onPress={() => {
               setResults([]);
               hasMoreDownData.current = true;
-              setActiveOption(option);
+              setActiveOption(option as SearchType);
             }}>
             <Text
               style={[

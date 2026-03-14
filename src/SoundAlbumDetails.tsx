@@ -22,6 +22,7 @@ import {
 } from './Common.styles';
 import MyUtils from './utils/MyUtils';
 import logUtil from './utils/LogUtil';
+import type { Song } from './types/song.type';
 import useDownloadListStore from './global/useDownloadListStore';
 import downloadCore from './downloadCore';
 import { produce } from 'immer';
@@ -217,11 +218,14 @@ const SoundAlbumDetails = ({ route, navigation }) => {
       ToastUtil.showDefaultToast('正在定位到上次播放，请稍候~');
       // 有播放数据，尝试定位到这个播放记录
       const latestOne = playHistorys
-        .sort((a, b) => new Date(b.updateTime) - new Date(a.updateTime))
+        .sort(
+          (a, b) =>
+            new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime(),
+        )
         .find(() => true);
       // console.log(`获取到最新的播放数据：${JSON.stringify(latestOne)}`);
       // 如果首次加载的就包含最新的数据了，则无需拉取了
-      indexOfLatestPlay.current = latestOne.sort;
+      indexOfLatestPlay.current = (latestOne as { sort?: number })?.sort;
       if (indexOfLatestPlay.current === undefined) {
         console.log('异常情况，当前的indexOfLatestPlay.current===undefined');
         indexOfLatestPlay.current = 0;
@@ -401,12 +405,16 @@ const SoundAlbumDetails = ({ route, navigation }) => {
     }
     //console.log(`即将跳转播放，此时的position为${songItem.position}`);
     console.log(`即将跳转播放，此时的songItem为${JSON.stringify(songItem)}`);
+    const songWithProgress = songItem as Song & {
+      percentDesc?: string;
+      position?: number;
+    };
     playerCore.clearAndPlayTarget(
       validItems,
       targetIndex,
-      isEmpty(songItem) || songItem.percentDesc === '100%'
+      isEmpty(songItem) || songWithProgress.percentDesc === '100%'
         ? 0
-        : songItem.position,
+        : songWithProgress.position ?? 0,
     );
     navigation.navigate('正在播放');
     logUtil.info(`播放声音专辑：${albumTitle}`, 'SOUNDALBUM');
@@ -646,7 +654,7 @@ const SoundAlbumDetails = ({ route, navigation }) => {
       />
 
       <Modal
-        visible={noteModalVisible}
+        isVisible={noteModalVisible}
         style={{
           // justifyContent: 'flex-end', // 新页面从底部弹出
           // margin: 0, // 禁用默认的 margin
@@ -654,7 +662,6 @@ const SoundAlbumDetails = ({ route, navigation }) => {
           flex: 1, // 使用 flex 布局让模态框充满整个屏幕
           justifyContent: 'center', // 居中对齐
         }}
-        transparent={true}
         animationType="fade"
         onRequestClose={() => setNoteModalVisible(false)}>
         <View style={styles1.modalOverlay}>

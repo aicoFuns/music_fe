@@ -22,7 +22,7 @@ const SearchHistoryList = ({ handleClickHistory }) => {
               }}>
               {keyword}
             </Text>
-            <TouchableOpacity onPress={() => deleteKeyword(keyword)}>
+            <TouchableOpacity onPress={() => deleteKeyword(String(keyword))}>
               <Icon
                 name="xmark"
                 color="red"

@@ -2,5 +2,9 @@
     "android": {
         "appId": 29188,
         "appKey": "uaJoQd2XfbTcmoybb6aIA-MZ"
+    },
+    "ios": {
+        "appId": 29188,
+        "appKey": "uaJoQd2XfbTcmoybb6aIA-MZ"
     }
 }

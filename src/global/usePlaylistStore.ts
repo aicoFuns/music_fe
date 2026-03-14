@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { produce } from 'immer';
 import { State } from 'react-native-track-player';
 import logUtil from '../utils/LogUtil';
+import type { Song, SkipStartEnd } from '../types/song.type';
+import type { CurrentPlay } from '../types/currentPlay.type';
 
 // 定义接口和状态类型
 interface usePlaylistStore {
@@ -14,7 +16,7 @@ interface usePlaylistStore {
   setPlaylist: (items: Array<Song>) => void;
   addSong: (item: Song) => void;
   removeSong: (item: Song) => void;
-  updateCurrentPlay: (currentPlay: CurrentPlay) => void;
+  updateCurrentPlay: (currentPlay: Partial<CurrentPlay>) => void;
   setCurrentPlay: (currentPlay: CurrentPlay) => void;
   loading: () => boolean;
   skipStartEndList: Array<SkipStartEnd>;
@@ -48,7 +50,7 @@ const usePlaylistStore = create<usePlaylistStore>()(
             state.playList = items;
           }),
         ),
-      addSong: item => {
+      addSong: (item: Song) => {
         // 如果已经存在，不用操作
         const isExist = get().playList.some(
           existItem =>
@@ -63,9 +65,9 @@ const usePlaylistStore = create<usePlaylistStore>()(
           produce(state => {
             if (
               !state.playList.some(
-                song =>
+                (song: Song) =>
                   song.platform === item.platform &&
-                  song.songId === item.songId,
+                  String(song.songId) === String(item.songId),
               )
             ) {
               state.playList.push(item);
@@ -73,11 +75,11 @@ const usePlaylistStore = create<usePlaylistStore>()(
           }),
         );
       },
-      removeSong: removeItem => {
+      removeSong: (removeItem: Song) => {
         set(
           produce(state => {
             state.playList = state.playList.filter(
-              item =>
+              (item: Song) =>
                 item.platform !== removeItem.platform ||
                 item.songId !== removeItem.songId,
             );
@@ -97,7 +99,7 @@ const usePlaylistStore = create<usePlaylistStore>()(
           produce(state => {
             // 存在则更新
             const existIndex = state.skipStartEndList.findIndex(
-              existItem =>
+              (existItem: SkipStartEnd) =>
                 existItem.platform === item.platform &&
                 existItem.soundAlbumId === item.soundAlbumId,
             );

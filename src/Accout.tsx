@@ -34,7 +34,7 @@ const enum AccountStatus {
   REGISTING = 'REGISTING',
 }
 
-const Account = () => {
+const Account = (_props?: { route?: any; navigation?: any }) => {
   const loginedUser = useAuthStore.getState().loginedUser;
   const currentAccountStatus =
     loginedUser !== null
@@ -118,10 +118,12 @@ const Account = () => {
       ToastUtil.showDefaultToast('登录成功');
       const result = response.data.result;
       useAuthStore.getState().setUser({
-        userName: result.userName,
-        token: result.token,
-        expiredTime: result.expiredTime,
-        createTime: result.createTime,
+        userName: result.userName ?? null,
+        token: result.token ?? null,
+        expiredTime: result.expiredTime ?? null,
+        createTime: result.createTime ?? null,
+        weiXin: result.weiXin ?? null,
+        userType: result.userType ?? null,
       });
       apiClient.defaults.headers.common.token = result.token;
       setAccountStatus(AccountStatus.LOGIN_SUCCESSFUl);
@@ -545,7 +547,7 @@ const Account = () => {
       )}
 
       <Modal
-        visible={authorModalVisible}
+        isVisible={authorModalVisible}
         style={{
           // justifyContent: 'flex-end', // 新页面从底部弹出
           // margin: 0, // 禁用默认的 margin
@@ -553,8 +555,6 @@ const Account = () => {
           flex: 1, // 使用 flex 布局让模态框充满整个屏幕
           justifyContent: 'center', // 居中对齐
         }}
-        transparent={true}
-        animationType="fade"
         onRequestClose={() => setAuthorModalVisible(false)}>
         <View style={styles1.modalOverlay}>
           <View style={styles1.modalContent}>
@@ -636,7 +636,7 @@ const Account = () => {
       </Modal>
 
       <Modal
-        visible={shareModalVisible}
+        isVisible={shareModalVisible}
         style={{
           // justifyContent: 'flex-end', // 新页面从底部弹出
           // margin: 0, // 禁用默认的 margin
@@ -644,8 +644,6 @@ const Account = () => {
           flex: 1, // 使用 flex 布局让模态框充满整个屏幕
           justifyContent: 'center', // 居中对齐
         }}
-        transparent={true}
-        animationType="fade"
         onRequestClose={() => setShareModalVisible(false)}>
         <View style={styles1.modalOverlay}>
           <View style={styles1.modalContent}>
@@ -727,7 +725,7 @@ const Account = () => {
       </Modal>
 
       <Modal
-        visible={updateModalVisible}
+        isVisible={updateModalVisible}
         style={{
           // justifyContent: 'flex-end', // 新页面从底部弹出
           // margin: 0, // 禁用默认的 margin
@@ -735,8 +733,6 @@ const Account = () => {
           flex: 1, // 使用 flex 布局让模态框充满整个屏幕
           justifyContent: 'center', // 居中对齐
         }}
-        transparent={true}
-        animationType="fade"
         onRequestClose={() => setUpdateModalVisible(false)}>
         <View style={styles1.modalOverlay}>
           <View style={styles1.modalContent}>
@@ -792,7 +788,7 @@ const Account = () => {
               <View style={styles.searchView}>
                 <TextInput
                   ref={inputRef}
-                  style={[styles.searchInput, { height: searchButtonHeight }]}
+                  style={[styles.searchInput, { height: Number(searchButtonHeight) || 40 }]}
                   onChangeText={text => {
                     keyWordRef.current = text;
                   }}

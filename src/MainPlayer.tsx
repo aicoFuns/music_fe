@@ -51,6 +51,7 @@ import logUtil from './utils/LogUtil';
 import useDownloadListStore from './global/useDownloadListStore';
 import downloadCore from './downloadCore';
 import dayjs from 'dayjs';
+import type { Song } from './types/song.type';
 
 type RenderType =
   | 'min'
@@ -63,7 +64,7 @@ type RenderType =
 const ITEM_HEIGHT = 40;
 const VISIBLE_ITEMS = 4;
 
-const MainPlayer = () => {
+const MainPlayer = (_props?: { route?: any; navigation?: any }) => {
   const currentPlay = usePlaylistStore(state => state.currentPlay);
   const loading = usePlaylistStore(state => state.loading());
   const progress = useProgress();
@@ -722,7 +723,7 @@ const MainPlayer = () => {
         rawDetail: songItem,
         addToFavorite: true,
         songType: songItem.songType,
-        valid: songItem.valid,
+        valid: (songItem as Song & { valid?: boolean }).valid,
       }); // 替换为真实的 API 地址
       ToastUtil.showDefaultToast('已标记红心');
       logUtil.info(`标记红心：${songItem.songTitle}`, 'PLAY');
@@ -1745,7 +1746,7 @@ const MainPlayer = () => {
 
       {/* 时间选择模态框 */}
       <Modal
-        visible={clockModalVisible}
+        isVisible={clockModalVisible}
         style={{
           // justifyContent: 'flex-end', // 新页面从底部弹出
           // margin: 0, // 禁用默认的 margin
@@ -1753,8 +1754,6 @@ const MainPlayer = () => {
           flex: 1, // 使用 flex 布局让模态框充满整个屏幕
           justifyContent: 'center', // 居中对齐
         }}
-        transparent={true}
-        animationType="fade"
         onRequestClose={() => setClockModalVisible(false)}>
         <View style={styles1.modalOverlay}>
           <View style={styles1.modalContent}>
@@ -1785,7 +1784,7 @@ const MainPlayer = () => {
             <View style={styles1.pickerContainer}>
               <View
                 style={{
-                  flexDirection: 'col',
+                  flexDirection: 'column',
                   height: ITEM_HEIGHT * VISIBLE_ITEMS,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1813,7 +1812,7 @@ const MainPlayer = () => {
               </View>
               <View
                 style={{
-                  flexDirection: 'col',
+                  flexDirection: 'column',
                   height: ITEM_HEIGHT * VISIBLE_ITEMS,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1824,7 +1823,7 @@ const MainPlayer = () => {
 
               <View
                 style={{
-                  flexDirection: 'col',
+                  flexDirection: 'column',
                   height: ITEM_HEIGHT * VISIBLE_ITEMS,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1892,7 +1891,7 @@ const MainPlayer = () => {
 
       {/* 播放速度选择模态框 */}
       <Modal
-        visible={rateModalVisible}
+        isVisible={rateModalVisible}
         style={{
           // justifyContent: 'flex-end', // 新页面从底部弹出
           // margin: 0, // 禁用默认的 margin
@@ -1900,8 +1899,6 @@ const MainPlayer = () => {
           flex: 1, // 使用 flex 布局让模态框充满整个屏幕
           justifyContent: 'center', // 居中对齐
         }}
-        transparent={true}
-        animationType="fade"
         onRequestClose={() => setRateModalVisible(false)}>
         <View style={styles1.modalOverlay}>
           <View style={styles1.modalContent}>
@@ -1991,7 +1988,7 @@ const MainPlayer = () => {
       </Modal>
 
       <Modal
-        visible={hifiModalVisible}
+        isVisible={hifiModalVisible}
         style={{
           // justifyContent: 'flex-end', // 新页面从底部弹出
           // margin: 0, // 禁用默认的 margin
@@ -1999,8 +1996,6 @@ const MainPlayer = () => {
           flex: 1, // 使用 flex 布局让模态框充满整个屏幕
           justifyContent: 'center', // 居中对齐
         }}
-        transparent={true}
-        animationType="fade"
         onRequestClose={() => setHifiEnabled(false)}>
         <View style={styles1.modalOverlay}>
           <View style={styles1.modalContent}>
@@ -2080,7 +2075,7 @@ const MainPlayer = () => {
             <View style={styles1.pickerContainer}>
               <View
                 style={{
-                  flexDirection: 'col',
+                  flexDirection: 'column',
                   height: ITEM_HEIGHT * VISIBLE_ITEMS,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -2108,7 +2103,7 @@ const MainPlayer = () => {
               </View>
               <View
                 style={{
-                  flexDirection: 'col',
+                  flexDirection: 'column',
                   height: ITEM_HEIGHT * VISIBLE_ITEMS,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -2119,7 +2114,7 @@ const MainPlayer = () => {
 
               <View
                 style={{
-                  flexDirection: 'col',
+                  flexDirection: 'column',
                   height: ITEM_HEIGHT * VISIBLE_ITEMS,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -2183,7 +2178,7 @@ const MainPlayer = () => {
         </View>
       </Modal>
       <Modal
-        visible={skipModalVisible}
+        isVisible={skipModalVisible}
         style={{
           // justifyContent: 'flex-end', // 新页面从底部弹出
           // margin: 0, // 禁用默认的 margin
@@ -2192,8 +2187,6 @@ const MainPlayer = () => {
           justifyContent: 'center', // 居中对齐
           //alignItems: 'center', // 居中对齐
         }}
-        transparent={true}
-        animationType="fade"
         onRequestClose={() => setSkipEnabled(false)}>
         {skipModalReady && (
           <View style={styles1.modalOverlay}>
@@ -2234,7 +2227,7 @@ const MainPlayer = () => {
               <View style={styles1.pickerContainer}>
                 <View
                   style={{
-                    flexDirection: 'col',
+                    flexDirection: 'column',
                     height: ITEM_HEIGHT * VISIBLE_ITEMS,
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -2262,7 +2255,7 @@ const MainPlayer = () => {
                 </View>
                 <View
                   style={{
-                    flexDirection: 'col',
+                    flexDirection: 'column',
                     height: ITEM_HEIGHT * VISIBLE_ITEMS,
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -2273,7 +2266,7 @@ const MainPlayer = () => {
 
                 <View
                   style={{
-                    flexDirection: 'col',
+                    flexDirection: 'column',
                     height: ITEM_HEIGHT * VISIBLE_ITEMS,
                     alignItems: 'center',
                     justifyContent: 'center',

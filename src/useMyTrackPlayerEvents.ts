@@ -12,6 +12,7 @@ import MyUtils from './utils/MyUtils';
 import { Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import apiClient from './utils/ApiClient';
+import type { Song } from './types/song.type';
 
 // 是否真的被打断了
 let reallyStopped = false;
@@ -77,7 +78,7 @@ export const useMyTrackPlayerEvents = () => {
               songId: String(currentPlayItem.songId),
               playDuration: event.duration,
               playPosition: Math.min(event.position + 5, event.duration),
-              sort: currentPlayItem.sort,
+              sort: (currentPlayItem as Song & { sort?: number }).sort,
             });
             //console.log('声音播放进度正常保存成功');
           }

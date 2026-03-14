@@ -2,14 +2,16 @@ import Toast from 'react-native-root-toast';
 import { fontSizes } from '../Common.styles';
 import { AppState } from 'react-native';
 
-let toast = null;
+let toast: ReturnType<typeof Toast.show> | null = null;
 const isAppInForeground = () => AppState.currentState === 'active';
 
 const ToastUtil = {
-  // 默认提示
   showDefaultToast: (title: string) => showToast(title, '#f2f2f2', '#000'),
-  showToast: (title: string, duration, position) =>
-    showToast(title, '#f2f2f2', '#000', duration, position),
+  showToast: (
+    title: string,
+    duration?: number,
+    position?: number,
+  ) => showToast(title, '#f2f2f2', '#000', duration, position),
   hide: () => Toast.hide(toast),
   // 错误提示
   showErrorToast: (title: string) => showToast(title, '#f2f2f2', 'red'),
@@ -35,15 +37,15 @@ const showToast = (
   }
 
   toast = Toast.show(title, {
-    duration: duration,
-    position: position,
+    duration,
+    position,
     shadow: true,
     animation: true,
     hideOnPress: true,
     delay: 0,
-    zIndex: 999,
     containerStyle: {
-      backgroundColor: backgroundColor,
+      backgroundColor,
+      zIndex: 999,
       // padding: 16,
       // borderRadius: 8,
       maxHeight: 200, // 限制最大高度

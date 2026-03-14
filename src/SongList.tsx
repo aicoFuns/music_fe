@@ -24,6 +24,8 @@ import { colors, fontSizes, iconSizes } from './Common.styles';
 import logUtil from './utils/LogUtil';
 import useDownloadListStore from './global/useDownloadListStore';
 import downloadCore from './downloadCore';
+import type { Song } from './types/song.type';
+import type { DownloadSong } from './types/download.type';
 
 type SongListRenderScenario =
   | 'playList'
@@ -36,14 +38,14 @@ type SongListRenderScenario =
 
 type SongListProps = {
   renderScenario: SongListRenderScenario;
-  songItems: Array<Song>; // 假设 songItems 是一个数组，元素类型是 SongItem
-  loadMoreData: any;
-  setModalClosed: () => void;
-  hasMoreUpData: boolean;
+  songItems: Array<Song>;
+  loadMoreData: (direction?: 'up' | 'down') => void | number | Promise<void | number | undefined>;
+  setModalClosed?: () => void;
+  hasMoreUpData?: boolean;
   hasMoreDownData: boolean;
-  playSongs: (songItem: Song) => void;
-  forceTriggerScrollTo: () => boolean;
-  callBack: (item: Song) => void;
+  playSongs?: (songItem: Song) => void;
+  forceTriggerScrollTo?: () => boolean;
+  callBack?: (item: Song) => void;
 };
 
 const SongList: React.FC<SongListProps> = React.memo(
@@ -54,21 +56,21 @@ const SongList: React.FC<SongListProps> = React.memo(
     setModalClosed = () => {},
     hasMoreUpData = true,
     hasMoreDownData = true,
-    playSongs = songItem => {},
+    playSongs = (songItem: Song) => {},
     forceTriggerScrollTo = () => false,
-    callBack = songItem => {},
+    callBack = (songItem: Song) => {},
   }) => {
     const navigation = useNavigation(); // 获取 navigation 对象
     // 状态管理
-    const [isPlayListModalVisible, setIsPlayListModalVisible] = useState(false); // 控制 Modal 显示/隐藏
-    const [playList, setPlayList] = useState([]); // 歌单列表数据
-    const [currentItem, setCurrentItem] = useState(null);
-    const [selectedPlaylistId, setSelectedPlaylistId] = useState(null); // 当前选中的歌单 ID
-    const [loading, setLoading] = useState(false); // 加载状态
-    const [flatListData, setFlatListData] = useState([]);
+    const [isPlayListModalVisible, setIsPlayListModalVisible] = useState(false);
+    const [playList, setPlayList] = useState<PlaylistItem[]>([]);
+    const [currentItem, setCurrentItem] = useState<Song | null>(null);
+    const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [flatListData, setFlatListData] = useState<Song[]>([]);
     const itemHeight = useRef(0);
     const [flatListReady, setFlatListReady] = useState(false);
-    const flatListRef = useRef(null);
+    const flatListRef = useRef<FlatList<Song> | null>(null);
     const isRemoving = useRef(false);
     const isLoadingUpData = useRef(false);
     const upIndexChange = useRef(0);
@@ -95,12 +97,12 @@ const SongList: React.FC<SongListProps> = React.memo(
         // console.log(
         //   `获取全部收藏歌曲信息：${JSON.stringify(allBookmarkedSongData)}`,
         // );
-        const updatedSongItems = songItems.map(item => ({
+        const updatedSongItems = songItems.map((item: Song) => ({
           ...item,
           isBookmarked: allBookmarkedSongData.some(
-            bookMarkData =>
+            (bookMarkData: { platform: string; songId: string | number }) =>
               bookMarkData.platform === item.platform &&
-              bookMarkData.songId.toString() === item.songId.toString(),
+              String(bookMarkData.songId) === String(item.songId),
           ),
         }));
 
@@ -137,7 +139,7 @@ const SongList: React.FC<SongListProps> = React.memo(
       setSelectedPlaylistId(null); // 重置选中状态
     };
 
-    const directionRef = useRef(undefined);
+    const directionRef = useRef<'up' | 'down' | undefined>(undefined);
     useEffect(() => {
       if (
         (renderScenario === 'playQueue' || renderScenario === 'sound') &&
@@ -185,68 +187,79 @@ const SongList: React.FC<SongListProps> = React.memo(
         return;
       }
 
+      const item = currentItem;
       await apiClient.post('/playlist/add-song', {
         playListId: selectedPlaylistId,
-        platform: currentItem.platform,
-        songId: currentItem.songId.toString(),
-        songTitle: currentItem.songTitle,
-        songImg: currentItem.songImg,
-        singerName: currentItem.singerName,
-        albumId: currentItem.albumId.toString(),
-        albumTitle: currentItem.albumTitle,
-        rawDetail: currentItem,
-        valid: currentItem.valid,
-        songType: currentItem.songType,
+        platform: item.platform,
+        songId: item.songId.toString(),
+        songTitle: item.songTitle,
+        songImg: item.songImg,
+        singerName: item.singerName,
+        albumId: item.albumId.toString(),
+        albumTitle: item.albumTitle,
+        rawDetail: item,
+        valid: (item as Song & { valid?: boolean }).valid,
+        songType: item.songType,
         addToFavorite: false,
-      }); // 替换为真实的 API 地址
+      });
       ToastUtil.showDefaultToast('已收藏');
       updateBookmarkStatus(
-        currentItem.platform,
-        currentItem.songId,
-        !currentItem.isBookmarked,
+        item.platform,
+        String(item.songId),
+        !item.isBookmarked,
       );
-      handleClosePlayListModal(); // 成功后关闭 Modal
-      logUtil.info(`收藏歌曲：${currentItem.songTitle}`, 'PLAYLIST');
+      handleClosePlayListModal();
+      logUtil.info(`收藏歌曲：${item.songTitle}`, 'PLAYLIST');
     };
 
-    const updateBookmarkStatus = (platform, songId, isBookmarked) => {
+    const updateBookmarkStatus = (
+      platform: string,
+      songId: string,
+      isBookmarked: boolean,
+    ) => {
       setFlatListData(prevArray =>
         produce(prevArray, draft => {
-          const item = draft.find(
-            item => item.platform === platform && item.songId === songId,
-          ); // 找到目标对象
-          if (item) {
-            item.isBookmarked = isBookmarked; // 直接修改字段
+          const found = draft.find(
+            (el: Song) => el.platform === platform && String(el.songId) === songId,
+          );
+          if (found) {
+            found.isBookmarked = isBookmarked;
           }
         }),
       );
     };
 
-    const removeSong = async item => {
+    const removeSong = async (item: Song) => {
       await apiClient.post('/playlist/remove-song', {
         removePlatform: item.platform,
         removeSongRefId: item.songId.toString(),
         removeFromFavorite: renderScenario === 'heartPlayList',
       }); // 替换为真实的 API 地址
-      updateBookmarkStatus(item.platform, item.songId, !item.isBookmarked);
+      updateBookmarkStatus(item.platform, String(item.songId), !item.isBookmarked);
       //console.log('执行完毕');
       ToastUtil.showDefaultToast('已取消收藏');
       logUtil.info(`取消收藏歌曲：${item.songTitle}`, 'PLAYLIST');
     };
 
-    // 渲染歌单列表的单个项
-    const renderPlaylistItem = ({ item }) => {
-      const isSelected = item.id === selectedPlaylistId; // 判断是否选中
+    type PlaylistItem = {
+      id: string;
+      playListImg?: string;
+      type?: string;
+      playListName: string;
+      createTime: string;
+    };
+
+    const renderPlaylistItem = ({ item }: { item: PlaylistItem }) => {
+      const isSelected = item.id === selectedPlaylistId;
 
       return (
         <TouchableOpacity
           style={[
             modalStyles.playlistItem,
-            isSelected && modalStyles.selectedPlaylistItem, // 选中状态样式
+            isSelected && modalStyles.selectedPlaylistItem,
           ]}
-          onPress={() => setSelectedPlaylistId(item.id)} // 点击设置选中项
+          onPress={() => setSelectedPlaylistId(item.id)}
         >
-          {/* 左侧图片 */}
           <Image
             source={MyUtils.buildPlayListImg(item.playListImg, item.type)}
             style={modalStyles.playlistImage}
@@ -278,7 +291,8 @@ const SongList: React.FC<SongListProps> = React.memo(
           () => {
             const flatListLength = flatListData.length;
             const playQueue = usePlaylistStore.getState().playList;
-            const playIndex = usePlaylistStore.getState().currentPlay.playIndex;
+            const playIndex =
+              usePlaylistStore.getState().currentPlay.playIndex ?? 0;
             let targetIndex = 0;
 
             // 情况1，元素很少，不可滚动，主流的手机显示9个item都是可以的
@@ -306,9 +320,9 @@ const SongList: React.FC<SongListProps> = React.memo(
             //   targetIndex = flatListLength / 2;
             // }
             const startIndex = playQueue.findIndex(
-              item =>
-                flatListData[0].platform === item.platform &&
-                flatListData[0].songId.toString() === item.songId.toString(),
+              (qItem: Song) =>
+                flatListData[0].platform === qItem.platform &&
+                String(flatListData[0].songId) === String(qItem.songId),
             );
             // console.log(
             //   `命中逻辑分支：flatListLength < 22, playIndex:${playIndex} startIndex:${startIndex}`,
@@ -316,8 +330,9 @@ const SongList: React.FC<SongListProps> = React.memo(
             targetIndex = playIndex - startIndex;
 
             if (flatListRef.current !== null) {
+              const ref = flatListRef.current;
               setTimeout(() => {
-                flatListRef.current.scrollToIndex({
+                ref.scrollToIndex({
                   index: targetIndex,
                   animated: true,
                   viewPosition: 0.5, // 让目标项居中
@@ -344,7 +359,7 @@ const SongList: React.FC<SongListProps> = React.memo(
         const interactionHandle = InteractionManager.runAfterInteractions(
           () => {
             let targetIndex = flatListData.findIndex(
-              item => item.isLatestPlaied,
+              (item: Song & { isLatestPlaied?: boolean }) => item.isLatestPlaied === true,
             );
             console.log(
               `${new Date().getMilliseconds()}获取到targetIndex：${targetIndex}`,
@@ -368,7 +383,7 @@ const SongList: React.FC<SongListProps> = React.memo(
       }
     }, [flatListReady, flatListData.length]);
 
-    const isActiveItem = item => {
+    const isActiveItem = (item: Song & { isLatestPlaied?: boolean }) => {
       if (renderScenario === 'playQueue') {
         return (
           usePlaylistStore.getState().currentPlay.songItem?.songId ===
@@ -376,24 +391,18 @@ const SongList: React.FC<SongListProps> = React.memo(
         );
       }
       if (renderScenario === 'sound') {
-        return item.isLatestPlaied;
+        return (item as Song & { isLatestPlaied?: boolean }).isLatestPlaied === true;
       }
       return false;
     };
 
-    const getDownloadIconName = (item: DownloadSong) => {
+    const getDownloadIconName = (item: DownloadSong): string => {
       const downloadStatus = item.downloadStatus;
-      if (downloadStatus === 'WaitStart') {
-        return 'clock';
-      } else if (downloadStatus === 'Success') {
-        // 下载成功
-        return 'check';
-      } else if (downloadStatus === 'Failed') {
-        // 下载失败
-        return 'rotate-right';
-      } else if (downloadStatus === 'Downloading') {
-        return 'download';
-      }
+      if (downloadStatus === 'WaitStart') return 'clock';
+      if (downloadStatus === 'Success') return 'check';
+      if (downloadStatus === 'Failed') return 'rotate-right';
+      if (downloadStatus === 'Downloading') return 'download';
+      return 'circle-question';
     };
 
     const getDownloadIconColor = (item: DownloadSong) => {
@@ -452,23 +461,25 @@ const SongList: React.FC<SongListProps> = React.memo(
       }
     };
 
-    const getSongItemWidth = item => {
+    const getSongItemWidth = (item: Song): string | number => {
       return item.songType === 'sound' ? '75%' : '70%';
     };
 
-    const getTextColor = item => {
-      if (isActiveItem(item)) {
-        return 'red';
-      }
-      if (item.valid) {
-        return colors.fontColorDrakGray;
-      }
+    const getTextColor = (item: Song & { valid?: boolean }) => {
+      if (isActiveItem(item)) return 'red';
+      if (item.valid) return colors.fontColorDrakGray;
       return colors.fontColorVeryLightGray;
     };
 
-    const handlePlaySound = async item => {
+    type SoundSongItem = Song & {
+      cacheStatus?: string;
+      percentDesc?: string;
+      valid?: boolean;
+    };
+
+    const handlePlaySound = async (item: SoundSongItem) => {
       if (item.cacheStatus === 'Done') {
-        playSongs(item);
+        playSongs?.(item);
       } else if (
         item.cacheStatus === 'WaitUpload' ||
         item.cacheStatus === 'Uploading'
@@ -495,19 +506,28 @@ const SongList: React.FC<SongListProps> = React.memo(
           `申请缓存时，后台返回的数据：${JSON.stringify(cacheItemResult)}`,
         );
         const index = flatListData.findIndex(
-          flatItem => flatItem.songId === item.songId,
+          (flatItem: Song) => String(flatItem.songId) === String(item.songId),
         );
-        flatListData[index].cacheStatus = cacheItemResult.cacheStatus;
-        flatListData[index].valid = cacheItemResult.cacheStatus === 'Done';
-
-        callBack(cacheItemResult);
+        if (index >= 0) {
+          (flatListData[index] as SoundSongItem).cacheStatus =
+            cacheItemResult.cacheStatus;
+          (flatListData[index] as SoundSongItem).valid =
+            cacheItemResult.cacheStatus === 'Done';
+        }
+        callBack?.(cacheItemResult);
         await apiClient.post('/utils/user-action', {
           action: 'SOUND-CACHE',
         });
       }
     };
 
-    const renderSong = ({ item, index }) => (
+    const renderSong = ({
+      item,
+      index,
+    }: {
+      item: Song & { valid?: boolean; cacheStatus?: string; percentDesc?: string };
+      index: number;
+    }) => (
       <View
         style={styles.songItemContainer}
         onLayout={event => {
@@ -516,7 +536,7 @@ const SongList: React.FC<SongListProps> = React.memo(
             itemHeight.current = height;
           }
         }}>
-        <View style={[styles.songItemView, { width: getSongItemWidth(item) }]}>
+        <View style={[styles.songItemView, { width: getSongItemWidth(item) as number }]}>
           <Image
             source={MyUtils.buildPlatformImg(item.platform, item.valid)}
             style={styles.songPlatformImg}
@@ -538,23 +558,21 @@ const SongList: React.FC<SongListProps> = React.memo(
                 return;
               }
               if (renderScenario === 'playQueue') {
-                // 播放队列界面
                 await playerCore.jumpToTargetItem(item);
-                setModalClosed();
+                setModalClosed?.();
               } else {
-                // 区分歌单界面还是其他界面
                 if (
                   renderScenario === 'albumList' ||
                   renderScenario === 'playList' ||
                   renderScenario === 'heartPlayList'
                 ) {
-                  // 清空播放队列，填入歌单数据
-                  await playSongs(item);
+                  await playSongs?.(item);
                 } else {
                   await playerCore.addThenPlay(item);
                 }
-
-                navigation.navigate('正在播放');
+                (navigation as { navigate: (name: string) => void }).navigate(
+                  '正在播放',
+                );
               }
             }}
             style={styles.songItemButton}>
@@ -575,12 +593,11 @@ const SongList: React.FC<SongListProps> = React.memo(
                   fontSize: fontSizes.small,
                   color: getTextColor(item),
                   flex: 1,
-                  //maxWidth: '30%',
                   fontWeight: isActiveItem(item) ? 'bold' : 'normal',
                 }}
                 numberOfLines={1}>
                 {' '}
-                - {item.singerName}
+                - {item.singerName ?? ''}
               </Text>
             )}
           </TouchableOpacity>
@@ -697,12 +714,12 @@ const SongList: React.FC<SongListProps> = React.memo(
           {renderScenario === 'downloadList' && (
             <TouchableOpacity
               style={styles.downloadStatus}
-              onPress={() => handleDownloadItem(item)}>
+              onPress={() => handleDownloadItem(item as unknown as DownloadSong)}>
               <Text style={styles.downloadText}>
                 {getDownloadText(item as DownloadSong)}
               </Text>
               <Icon
-                name={getDownloadIconName(item as DownloadSong)}
+                name={getDownloadIconName(item as DownloadSong) ?? 'circle-question'}
                 size={iconSizes.small}
                 color={getDownloadIconColor(item as DownloadSong)}
               />
@@ -712,7 +729,7 @@ const SongList: React.FC<SongListProps> = React.memo(
       </View>
     );
 
-    const getItemLayout = (data, index) => ({
+    const getItemLayout = (_data: ArrayLike<Song>, index: number) => ({
       length: itemHeight.current,
       offset: itemHeight.current * index,
       index,
@@ -724,7 +741,7 @@ const SongList: React.FC<SongListProps> = React.memo(
         <FlatList
           ref={flatListRef}
           data={flatListData}
-          keyExtractor={item => `${item.platform}${item.songId}`}
+          keyExtractor={(item: Song) => `${item.platform}${item.songId}`}
           renderItem={renderSong}
           getItemLayout={getItemLayout} // 优化滚动性能
           onEndReached={() => {
@@ -738,7 +755,7 @@ const SongList: React.FC<SongListProps> = React.memo(
               return;
             }
             directionRef.current = 'down';
-            loadMoreData('down', itemHeight, flatListRef);
+            loadMoreData('down');
           }} // 滑到底部加载更多
           onEndReachedThreshold={0.1} // 接近底部时触发加载
           contentContainerStyle={styles.listContainer}
@@ -762,13 +779,10 @@ const SongList: React.FC<SongListProps> = React.memo(
               );
               isLoadingUpData.current = true;
               directionRef.current = 'up';
-              const upResult = await loadMoreData(
-                'up',
-                itemHeight,
-                flatListRef,
-              ); // 滑到顶部时加载更多
+              const upResult = await loadMoreData('up');
               console.log(`向上up滑动后拿到结果：${JSON.stringify(upResult)}`);
-              upIndexChange.current = upResult;
+              upIndexChange.current =
+                typeof upResult === 'number' ? upResult : 0;
               // if (renderScenario === 'sound') {
               //   upIndexChange.current = 15;
               // }
@@ -806,7 +820,7 @@ const SongList: React.FC<SongListProps> = React.memo(
             ) : (
               <FlatList
                 data={playList}
-                keyExtractor={item => item.id.toString()}
+                keyExtractor={(item: PlaylistItem) => item.id.toString()}
                 renderItem={renderPlaylistItem}
               />
             )}
@@ -818,9 +832,11 @@ const SongList: React.FC<SongListProps> = React.memo(
                 onPress={() => {
                   handleClosePlayListModal();
                   if (renderScenario === 'playQueue') {
-                    setModalClosed();
+                    setModalClosed?.();
                   }
-                  navigation.navigate('我的收藏');
+                  (navigation as { navigate: (name: string) => void }).navigate(
+                    '我的收藏',
+                  );
                 }}>
                 <Text style={modalStyles.modalPlayListButtonText}>创建</Text>
                 <Icon

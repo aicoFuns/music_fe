@@ -4,6 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { produce } from 'immer';
 import { isEmpty } from 'lodash';
 import ToastUtil from '../utils/ToastUtil';
+import type { Song } from '../types/song.type';
+import type {
+  DownloadSong,
+  DownloadQueueTaskStatus,
+  CurrentDownloadStatus,
+  FileSuffixType,
+} from '../types/download.type';
 
 // 定义接口和状态类型
 interface useDownloadListStore {
@@ -54,7 +61,7 @@ const useDownloadListStore = create<useDownloadListStore>()(
         set(
           produce(state => {
             const indexOfFailedItem = state.downLoadList.findIndex(
-              item =>
+              (item: DownloadSong) =>
                 item.platform === failedItem.platform &&
                 item.songId === failedItem.songId,
             );
@@ -71,7 +78,7 @@ const useDownloadListStore = create<useDownloadListStore>()(
       retryAllFailedItems: () => {
         set(
           produce(state => {
-            state.downLoadList = state.downLoadList.map(item => {
+            state.downLoadList = state.downLoadList.map((item: DownloadSong) => {
               if (item.downloadStatus === 'Failed') {
                 item.downloadStatus = 'WaitStart';
               }
@@ -120,10 +127,10 @@ const useDownloadListStore = create<useDownloadListStore>()(
         }
         return get().downLoadList[get().currentDownloadIndex];
       },
-      addSong: item => {
+      addSong: (item: Song) => {
         // 如果已经存在，不用操作
         const isExist = get().downLoadList.some(
-          existItem =>
+          (existItem: DownloadSong) =>
             existItem.platform === item.platform &&
             existItem.songId.toString() === item.songId.toString(),
         );
@@ -142,11 +149,11 @@ const useDownloadListStore = create<useDownloadListStore>()(
         );
       },
 
-      removeSong: removeItem => {
+      removeSong: (removeItem: Song) => {
         set(
           produce(state => {
             state.downLoadList = state.downLoadList.filter(
-              item =>
+              (item: DownloadSong) =>
                 item.platform !== removeItem.platform ||
                 item.songId !== removeItem.songId,
             );

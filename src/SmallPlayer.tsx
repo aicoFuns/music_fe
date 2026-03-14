@@ -170,7 +170,7 @@ const SmallPlayer = React.memo(() => {
           styles.recordContainer,
           { transform: [{ rotate: rotateInterpolation }] },
         ]}>
-        <TouchableOpacity onPress={() => navigation.navigate('正在播放')}>
+        <TouchableOpacity onPress={() => (navigation as { navigate: (name: string) => void }).navigate('正在播放')}>
           <Image source={getSongImg()} style={styles.recordImage} />
         </TouchableOpacity>
       </Animated.View>
@@ -186,7 +186,7 @@ const SmallPlayer = React.memo(() => {
         {useSingLine() ? (
           <View style={{ alignItems: 'center', flexDirection: 'row' }}>
             <Text
-              onPress={() => navigation.navigate('正在播放')}
+              onPress={() => (navigation as { navigate: (name: string) => void }).navigate('正在播放')}
               style={{
                 fontSize: fontSizes.normal,
                 color: colors.fontColorLightGray,
@@ -198,7 +198,7 @@ const SmallPlayer = React.memo(() => {
             </Text>
 
             <Text
-              onPress={() => navigation.navigate('正在播放')}
+              onPress={() => (navigation as { navigate: (name: string) => void }).navigate('正在播放')}
               style={{
                 fontSize: fontSizes.small,
                 color: '#666',
@@ -211,7 +211,7 @@ const SmallPlayer = React.memo(() => {
         ) : (
           <View style={{ alignItems: 'center' }}>
             <Text
-              onPress={() => navigation.navigate('正在播放')}
+              onPress={() => (navigation as { navigate: (name: string) => void }).navigate('正在播放')}
               style={{
                 //transform: [{ translateX }],
                 fontSize: fontSizes.normal,
@@ -223,7 +223,7 @@ const SmallPlayer = React.memo(() => {
             </Text>
 
             <Text
-              onPress={() => navigation.navigate('正在播放')}
+              onPress={() => (navigation as { navigate: (name: string) => void }).navigate('正在播放')}
               style={{
                 fontSize: fontSizes.small,
                 color: '#666',

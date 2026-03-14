@@ -24,8 +24,9 @@ import MyUtils from './utils/MyUtils';
 import logUtil from './utils/LogUtil';
 import useDownloadListStore from './global/useDownloadListStore';
 import downloadCore from './downloadCore';
+import type { Song } from './types/song.type';
 
-const PlaylistDetails = ({ route, navigation }) => {
+const PlaylistDetails = ({ route, navigation }: { route: any; navigation: any }) => {
   console.log(
     `route.params.playListItem:${JSON.stringify(route.params.playListItem)}`,
   );

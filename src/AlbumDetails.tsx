@@ -21,10 +21,11 @@ import {
   iconSizes,
 } from './Common.styles';
 import logUtil from './utils/LogUtil';
+import type { Song } from './types/song.type';
 
-const AlumDetails = ({ route, navigation }) => {
+const AlumDetails = ({ route, navigation }: { route: any; navigation: any }) => {
   const { albumId, albumTitle, albumImg, platform } = route.params.albumItem;
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<Song[]>([]);
   const hasMoreDownData = useRef(true);
   // 获取播放队列的函数
   const fetchSongs = async () => {
@@ -40,7 +41,9 @@ const AlumDetails = ({ route, navigation }) => {
   }, []);
 
   const playSongs = (songItem?: Song) => {
-    const filterResult = results.filter(item => item.valid);
+    const filterResult = results.filter(
+      (item: Song & { valid?: boolean }) => item.valid !== false,
+    );
     if (isEmpty(filterResult)) {
       ToastUtil.showErrorToast('没有可播放的歌曲');
       return;
@@ -48,9 +51,9 @@ const AlumDetails = ({ route, navigation }) => {
     let targetIndex = 0;
     if (!isEmpty(songItem)) {
       targetIndex = filterResult.findIndex(
-        item =>
-          item.platform === songItem.platform &&
-          item.songId === songItem.songId,
+        (item: Song) =>
+          item.platform === songItem!.platform &&
+          String(item.songId) === String(songItem!.songId),
       );
       ToastUtil.showDefaultToast(`即将播放：${songItem.songTitle}`);
     } else {

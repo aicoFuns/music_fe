@@ -15,7 +15,7 @@ interface useAuthStateStore {
     userType: UserType | null;
   } | null;
   loading: boolean;
-  readUserMsgIds: [];
+  readUserMsgIds: number[];
   isHydrated: boolean; // 标记持久化状态是否已恢复
   register: (
     username: string,

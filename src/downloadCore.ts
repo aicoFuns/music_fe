@@ -1,5 +1,6 @@
 import { isEmpty } from 'lodash';
 import useDownloadListStore from './global/useDownloadListStore';
+import type { DownloadSong, FileSuffixType } from './types/download.type';
 import MyUtils from './utils/MyUtils';
 import apiClient from './utils/ApiClient';
 import logUtil from './utils/LogUtil';
@@ -71,7 +72,7 @@ async function _startDownload() {
           await pauseDownload();
           break;
         }
-        const { success, fileSuffix } = await downloadCurrent();
+        const result = await downloadCurrent();
 
         if (
           useDownloadListStore.getState().downloadQueueTaskStatus === 'Pause'
@@ -80,6 +81,16 @@ async function _startDownload() {
           console.log('检测到用户手动暂停下载，已经终止下载队列任务~');
           break;
         } else {
+          const success =
+            typeof result === 'object' && result !== null && 'success' in result
+              ? result.success
+              : result;
+          const fileSuffix =
+            typeof result === 'object' &&
+            result !== null &&
+            'fileSuffix' in result
+              ? result.fileSuffix
+              : 'default.mp3';
           useDownloadListStore
             .getState()
             .setCurrentDownloadStatus(success ? 'Success' : 'Failed');

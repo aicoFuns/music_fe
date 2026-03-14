@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Modal,
   Alert,
   TextInput,
   KeyboardAvoidingView,
@@ -20,6 +19,7 @@ import { isEmpty } from 'lodash';
 import { BlurView } from '@react-native-community/blur';
 import ToastUtil from './utils/ToastUtil';
 import Icon from 'react-native-vector-icons/FontAwesome6';
+import Modal from 'react-native-modal';
 import { useIsFocused } from '@react-navigation/native';
 import {
   colors,
@@ -44,6 +44,8 @@ type PlayListDto = {
 };
 type VipType = 'Free' | 'Vip' | 'Purchse' | 'Svip';
 type SoundAlbumDto = {
+  id?: number;
+  type?: PlayListType;
   platform: string;
   albumId: string;
   albumImg: string;
@@ -87,19 +89,17 @@ const MyPlayList = ({ route, navigation }) => {
   };
 
   const getPlaylists = async () => {
-    //console.log('请求获取播放列表');
-    const response = (await apiClient.get(
+    const response = await apiClient.get<{ result: PlayListDto[] }>(
       `/playlist/all/${selectedTab}`,
-    )) as Array<PlayListDto>;
-    //console.log(`获取结果：${JSON.stringify(response.data.result)}`);
-    setResult(response.data.result);
+    );
+    setResult(response.data.result ?? []);
   };
 
   const getSoundAlbumList = async () => {
-    const response = (await apiClient.get(
+    const response = await apiClient.get<{ result: SoundAlbumDto[] }>(
       '/soundalbum/all',
-    )) as Array<SoundAlbumDto>;
-    setSoundalbums(response.data.result);
+    );
+    setSoundalbums(response.data.result ?? []);
   };
 
   const handleConfirm = async () => {
@@ -420,7 +420,7 @@ const MyPlayList = ({ route, navigation }) => {
       {selectedTab === 'SOUND-ALBUM' && (
         <FlatList
           data={soundalbums}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={item => String(item.id ?? item.albumId)}
           renderItem={renderSoundAlbumItem}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
@@ -545,10 +545,10 @@ const MyPlayList = ({ route, navigation }) => {
       {/* 模态框 */}
       {/* 模态框 */}
       <Modal
-        visible={isModalVisible}
-        transparent={true} // 设置背景透明
-        animationType="slide" // 动画效果
-        onBackdropPress={closeModal} // 点击模糊部分关闭新页面
+        isVisible={isModalVisible}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        onBackdropPress={closeModal}
         onBackButtonPress={closeModal}
         onRequestClose={closeModal}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

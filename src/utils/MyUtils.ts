@@ -4,6 +4,7 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import RNFS from 'react-native-fs';
 import ToastUtil from './ToastUtil';
 import logUtil from './LogUtil';
+import type { FileSuffixType } from '../types/download.type';
 import useDownloadListStore from '../global/useDownloadListStore';
 import downloadCore from '../downloadCore';
 import apiClient from './ApiClient';
@@ -130,7 +131,7 @@ const MyUtils = {
     return require('../assets/images/default.playlist.png');
   },
 
-  formatPlayerTime: seconds => {
+  formatPlayerTime: (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -197,7 +198,7 @@ const MyUtils = {
         toFile: downloadDest, // 保存到本地的路径
         background: true, // 是否在后台下载
         progressDivider: 50, // 进度更新的间隔，单位是字节
-        begin: res => {
+        begin: (res: { jobId: number }) => {
           logUtil.info(
             `用户开始下载歌曲，fileName：${fileName} res：${JSON.stringify(
               res,
@@ -205,7 +206,11 @@ const MyUtils = {
             'DOWNLOAD',
           );
         },
-        progress: async res => {
+        progress: async (res: {
+          jobId: number;
+          bytesWritten: number;
+          contentLength: number;
+        }) => {
           if (
             useDownloadListStore.getState().downloadQueueTaskStatus === 'Pause'
           ) {

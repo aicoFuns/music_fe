@@ -1,7 +1,7 @@
 //platform songId songTitle singerId singerName albumId isBookMarked
 type SongType = 'music' | 'sound';
 
-type Song = {
+export type Song = {
   platform: string;
   songId: string;
   songTitle: string;
@@ -17,7 +17,7 @@ type Song = {
   songType?: SongType;
 };
 
-type SkipStartEnd = {
+export type SkipStartEnd = {
   platform: string;
   soundAlbumId: string;
   skipStart: number;

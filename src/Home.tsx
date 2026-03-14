@@ -75,38 +75,38 @@ const pushyClient = new Pushy({
   debug: true,
 });
 
-function MusicPlayerScreen({ route, navigation }) {
+function MusicPlayerScreen({ route, navigation }: { route: any; navigation: any }) {
   return <MainPlayer route={route} navigation={navigation} />;
 }
 
-function SearchScreen({ route, navigation }) {
+function SearchScreen({ route, navigation }: { route: any; navigation: any }) {
   return <SearchList route={route} navigation={navigation} />;
 }
 
-function AccountScreen({ route, navigation }) {
+function AccountScreen({ route, navigation }: { route: any; navigation: any }) {
   return <Account route={route} navigation={navigation} />;
 }
 
-function AlumDetailsScreen({ route, navigation }) {
+function AlumDetailsScreen({ route, navigation }: { route: any; navigation: any }) {
   return <AlumDetails route={route} navigation={navigation} />;
 }
-function PlaylistDetailsScreen({ route, navigation }) {
+function PlaylistDetailsScreen({ route, navigation }: { route: any; navigation: any }) {
   return <PlaylistDetails route={route} navigation={navigation} />;
 }
 
-function MyPlayListScreen({ route, navigation }) {
+function MyPlayListScreen({ route, navigation }: { route: any; navigation: any }) {
   return <MyPlayList route={route} navigation={navigation} />;
 }
 
-function DownloadListScreen({ route, navigation }) {
+function DownloadListScreen({ route, navigation }: { route: any; navigation: any }) {
   return <DownloadList route={route} navigation={navigation} />;
 }
 
-function SoundAlbumDetailsScreen({ route, navigation }) {
+function SoundAlbumDetailsScreen({ route, navigation }: { route: any; navigation: any }) {
   return <SoundAlbumDetails route={route} navigation={navigation} />;
 }
 
-function SingerDetailsScreen({ route, navigation }) {
+function SingerDetailsScreen({ route, navigation }: { route: any; navigation: any }) {
   return <SingerDetails route={route} navigation={navigation} />;
 }
 
@@ -488,7 +488,7 @@ function HomeScreen({ navigation }) {
       <View style={styles.searchView}>
         <TextInput
           ref={inputRef}
-          style={[styles.searchInput, { height: searchButtonHeight }]}
+          style={[styles.searchInput, { height: Number(searchButtonHeight) || 40 }]}
           onChangeText={text => {
             keyWordRef.current = text;
           }}
@@ -818,6 +818,7 @@ const Stack = createNativeStackNavigator();
 function RootStack() {
   return (
     <Stack.Navigator
+      id={undefined}
       initialRouteName="享听"
       screenOptions={({ navigation, route }) => ({
         header: () => <MyHeader title={route.name} navigation={navigation} />,

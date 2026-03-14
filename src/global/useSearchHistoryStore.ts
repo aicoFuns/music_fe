@@ -25,7 +25,7 @@ const useSearchHistoryStore = create<useSearchListStore>()(
             // 移除旧关键字并添加到最前面
             state.history = [
               keyword,
-              ...state.history.filter(item => item !== keyword),
+              ...state.history.filter((item: string) => item !== keyword),
             ];
             // 限制最多保留 10 条记录
             state.history = state.history.slice(0, 10);
@@ -37,7 +37,7 @@ const useSearchHistoryStore = create<useSearchListStore>()(
         set(
           produce(state => {
             // 过滤掉目标关键字
-            state.history = state.history.filter(item => item !== keyword);
+            state.history = state.history.filter((item: string) => item !== keyword);
           }),
         ),
 

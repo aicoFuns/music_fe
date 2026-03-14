@@ -12,6 +12,7 @@ import MyUtils from './utils/MyUtils';
 import DeviceInfo from 'react-native-device-info';
 import { Platform } from 'react-native';
 import logUtil from './utils/LogUtil';
+import type { Song } from './types/song.type';
 
 async function pause() {
   if (!usePlaylistStore.getState().currentPlay.isPlaying) {
@@ -113,14 +114,16 @@ async function jumpToTargetItem(item: Song) {
   const targetIndex = usePlaylistStore
     .getState()
     .playList.findIndex(
-      listItem =>
-        listItem.platform === item.platform && listItem.songId === item.songId,
+      (listItem: Song) =>
+        listItem.platform === item.platform &&
+        String(listItem.songId) === String(item.songId),
     );
   if (targetIndex === -1) {
     console.log(`该歌曲${item.songTitle}已经不存在于播放列表中...`);
     return;
   }
-  const currentPlayIndex = usePlaylistStore.getState().currentPlay.playIndex;
+  const currentPlayIndex =
+    usePlaylistStore.getState().currentPlay.playIndex ?? 0;
   if (targetIndex === currentPlayIndex) {
     return;
   }
@@ -135,7 +138,7 @@ async function _playTargetIndex(
 ) {
   const playList = usePlaylistStore.getState().playList;
   const planStopAt = usePlaylistStore.getState().currentPlay.planStopAt;
-  const playRate = usePlaylistStore.getState().currentPlay.playRate;
+  const playRate = usePlaylistStore.getState().currentPlay.playRate ?? 1;
   const qqLevel = usePlaylistStore.getState().currentPlay.qqConfigLevel;
   const WyyLevel = usePlaylistStore.getState().currentPlay.wyyConfigLevel;
   usePlaylistStore.getState().setCurrentPlay({
@@ -144,7 +147,7 @@ async function _playTargetIndex(
     playIndex: targetIndex,
     playPosition: position,
     planStopAt: planStopAt,
-    playRate: playRate,
+    playRate,
     qqConfigLevel: qqLevel,
     wyyConfigLevel: WyyLevel,
   });
@@ -152,19 +155,19 @@ async function _playTargetIndex(
   await _play(forceRefreshUrl);
 }
 
-async function addThenPlay(item) {
+async function addThenPlay(item: Song) {
   await TrackPlayer.pause();
   ToastUtil.showDefaultToast(`即将播放：${item.songTitle}`);
   usePlaylistStore.getState().addSong(item);
   const playIndex = usePlaylistStore
     .getState()
     .playList.findIndex(
-      playListItem =>
+      (playListItem: Song) =>
         playListItem.platform === item.platform &&
-        playListItem.songId.toString() === item.songId.toString(),
+        String(playListItem.songId) === String(item.songId),
     );
   usePlaylistStore.getState().updateCurrentPlay({
-    playIndex: playIndex,
+    playIndex,
     songItem: item,
     playPosition: 0,
   });
@@ -172,16 +175,20 @@ async function addThenPlay(item) {
   await _play();
 }
 
-async function addToPlaylist(item) {
+async function addToPlaylist(item: Song) {
   ToastUtil.showDefaultToast('已添加到播放队列');
   usePlaylistStore.getState().addSong(item);
 }
 
-async function clearAndPlayAll(items) {
+async function clearAndPlayAll(items: Song[]) {
   await clearAndPlayTarget(items, 0);
 }
 
-async function clearAndPlayTarget(items, targetIndex, position = 0) {
+async function clearAndPlayTarget(
+  items: Song[],
+  targetIndex: number,
+  position = 0,
+) {
   console.log(`此时的position为${position}`);
   if (_.isEmpty(items)) {
     ToastUtil.showErrorToast('沒有数据，无法播放...');
@@ -432,7 +439,7 @@ async function _tryPlay(forceRefreshUrl = false) {
     } else {
       refreshMusicDetailThenPlay(
         currentPlay.songItem,
-        currentPlay.playIndex as number,
+        currentPlay.playIndex ?? 0,
       );
       return;
     }
@@ -655,13 +662,14 @@ async function refreshMusicDetailThenPlay(
       songLyric: result?.songLyric,
       urlRefreshTime: new Date(),
     };
-  } catch (err) {
+  } catch (err: unknown) {
+    const e = err as { message?: string; stack?: string; code?: string };
     logUtil.error(
-      `获取播放链接发生异常，准备替换为失败默认音源，错误信息：${err?.message} 堆栈：${err?.stack}`,
+      `获取播放链接发生异常，准备替换为失败默认音源，错误信息：${e?.message ?? ''} 堆栈：${e?.stack ?? ''}`,
     );
 
     let url;
-    if (err.code === 'OVER-LIMIT') {
+    if (e.code === 'OVER-LIMIT') {
       console.log('播放次数超过限制了，准备替换音源~');
       url = require('./assets/mp3/over-limit.mp3');
     } else if (songItem.songType === 'sound') {

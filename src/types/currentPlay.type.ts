@@ -1,8 +1,10 @@
 //import { State } from 'react-native-track-player';
+import type { Song } from './song.type';
+
 // type QQLevel = '320';
 // type WyyLevel = 'exhigh';
 
-type CurrentPlay = {
+export type CurrentPlay = {
   isPlaying?: boolean;
   trackPlayState?: string;
   songItem?: Song | null;
